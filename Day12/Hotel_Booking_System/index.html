@@ -1,0 +1,1112 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GrandStay | Hotel Booking</title>
+
+<style>
+:root {
+    --navy: #142b3b;
+    --gold: #c9a96e;
+    --cream: #f7f5f0;
+    --white: #ffffff;
+    --muted: #718096;
+    --green: #15803d;
+    --red: #b91c1c;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: var(--cream);
+    color: var(--navy);
+    line-height: 1.6;
+}
+
+button, input, select {
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+    transition: .2s ease;
+}
+
+button:hover {
+    filter: brightness(.92);
+    transform: translateY(-1px);
+}
+
+.topbar {
+    background: var(--navy);
+    color: white;
+    padding: 15px 6%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.logo {
+    font-size: 25px;
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+
+.logo span {
+    color: var(--gold);
+}
+
+.topbar small {
+    color: #d8e0e5;
+}
+
+.hero {
+    min-height: 410px;
+    display: flex;
+    align-items: center;
+    padding: 55px 8%;
+    color: white;
+    background:
+      linear-gradient(90deg, rgba(10,28,40,.90), rgba(10,28,40,.28)),
+      url("https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1800&q=85")
+      center/cover no-repeat;
+}
+
+.hero-content {
+    max-width: 650px;
+}
+
+.eyebrow {
+    color: var(--gold);
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    font-size: 12px;
+}
+
+.hero h1 {
+    font-size: clamp(35px, 5vw, 58px);
+    line-height: 1.12;
+    margin: 18px 0;
+}
+
+.hero p {
+    color: #eef2f5;
+    max-width: 500px;
+}
+
+.hero-button {
+    display: inline-block;
+    margin-top: 25px;
+    padding: 13px 25px;
+    border: none;
+    border-radius: 5px;
+    background: var(--gold);
+    color: var(--navy);
+    font-weight: 800;
+}
+
+main {
+    max-width: 1250px;
+    margin: 35px auto;
+    padding: 0 20px;
+}
+
+.section-heading {
+    margin-bottom: 20px;
+}
+
+.section-heading h2 {
+    font-size: 27px;
+    margin-bottom: 4px;
+}
+
+.section-heading p {
+    color: var(--muted);
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: white;
+    padding: 20px;
+    border: 1px solid #e9e4d9;
+    border-radius: 12px;
+    box-shadow: 0 5px 18px #142b3b08;
+}
+
+.stat-card span {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.stat-card h3 {
+    font-size: 27px;
+    margin-top: 5px;
+}
+
+.panel {
+    background: white;
+    border: 1px solid #e9e4d9;
+    border-radius: 13px;
+    padding: 26px;
+    margin-bottom: 25px;
+    box-shadow: 0 6px 24px #142b3b08;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 17px;
+}
+
+.field label {
+    display: block;
+    font-weight: 700;
+    font-size: 13px;
+    margin-bottom: 6px;
+}
+
+input, select {
+    width: 100%;
+    padding: 12px 13px;
+    border: 1px solid #d9e0e5;
+    background: #fcfcfb;
+    color: var(--navy);
+    border-radius: 7px;
+    outline: none;
+}
+
+input:focus, select:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px #c9a96e25;
+}
+
+.btn {
+    border: 0;
+    border-radius: 7px;
+    padding: 11px 16px;
+    background: var(--navy);
+    color: white;
+    font-weight: 700;
+}
+
+.btn-gold {
+    background: var(--gold);
+    color: var(--navy);
+}
+
+.btn-red {
+    background: #b91c1c;
+    color: white;
+}
+
+.btn-green {
+    background: #15803d;
+    color: white;
+}
+
+.full {
+    width: 100%;
+    margin-top: 18px;
+}
+
+.room-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.room-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #e9e4d9;
+    box-shadow: 0 5px 18px #142b3b0b;
+}
+
+.room-card img {
+    display: block;
+    width: 100%;
+    height: 190px;
+    object-fit: cover;
+    background: #e5e7eb;
+}
+
+.room-info {
+    padding: 18px;
+}
+
+.room-info h3 {
+    margin-bottom: 6px;
+}
+
+.room-info p {
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.room-tag {
+    display: inline-block;
+    color: #80632f;
+    background: #f8f0df;
+    padding: 4px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 800;
+    margin-bottom: 10px;
+}
+
+.message {
+    margin-bottom: 18px;
+    padding: 12px 16px;
+    border-radius: 7px;
+    display: none;
+    overflow-wrap: anywhere;
+}
+
+.message.success {
+    display: block;
+    background: #dcfce7;
+    color: #166534;
+}
+
+.message.error {
+    display: block;
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.actions {
+    display: flex;
+    gap: 9px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+
+.table-wrap {
+    overflow-x: auto;
+    margin-top: 18px;
+}
+
+table {
+    width: 100%;
+    min-width: 700px;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 13px 12px;
+    border-bottom: 1px solid #e7ebef;
+    text-align: left;
+    font-size: 13px;
+}
+
+th {
+    background: #f4f2ed;
+    color: #53616d;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+}
+
+tbody tr:hover {
+    background: #faf9f6;
+}
+
+.status {
+    display: inline-block;
+    border-radius: 20px;
+    padding: 4px 9px;
+    background: #e5e7eb;
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.status.confirmed {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.status.checked-in {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status.checked-out {
+    background: #f3e8ff;
+    color: #7e22ce;
+}
+
+.status.cancelled {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.result {
+    margin-top: 14px;
+    padding: 15px;
+    background: #f4f6f8;
+    border-radius: 8px;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font-size: 13px;
+}
+
+.chatbot-widget {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+}
+
+.chatbot-toggle {
+    border: none;
+    border-radius: 999px;
+    background: var(--navy);
+    color: white;
+    font-weight: 800;
+    padding: 14px 18px;
+    box-shadow: 0 12px 32px rgba(20, 43, 59, 0.22);
+}
+
+.chatbot-panel {
+    display: none;
+    width: min(360px, calc(100vw - 28px));
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 18px;
+    box-shadow: 0 18px 38px rgba(20, 43, 59, 0.18);
+    overflow: hidden;
+}
+
+.chatbot-panel.open {
+    display: block;
+}
+
+.chatbot-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(135deg, var(--navy), #2a4b62);
+    color: white;
+    padding: 14px 16px;
+}
+
+.chatbot-header strong {
+    display: block;
+    font-size: 15px;
+}
+
+.chatbot-header small {
+    color: #d8e0e5;
+}
+
+.chatbot-close {
+    background: transparent;
+    border: 0;
+    color: white;
+    font-size: 24px;
+    line-height: 1;
+    padding: 0 5px;
+}
+
+.chatbot-messages {
+    max-height: 280px;
+    overflow-y: auto;
+    padding: 12px 14px;
+    background: #f7f7f5;
+}
+
+.chatbot-message {
+    display: flex;
+    margin-bottom: 10px;
+}
+
+.chatbot-message.user {
+    justify-content: flex-end;
+}
+
+.chatbot-bubble {
+    max-width: 85%;
+    padding: 10px 12px;
+    border-radius: 14px;
+    font-size: 13px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.chatbot-message.bot .chatbot-bubble {
+    background: white;
+    border: 1px solid #e9e4d9;
+    color: var(--navy);
+}
+
+.chatbot-message.user .chatbot-bubble {
+    background: var(--gold);
+    color: var(--navy);
+}
+
+.chatbot-quick {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 12px 0;
+    background: #f7f7f5;
+}
+
+.chatbot-quick button {
+    border: 1px solid #dfe6ec;
+    background: white;
+    color: var(--navy);
+    border-radius: 999px;
+    padding: 7px 10px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.chatbot-form {
+    display: flex;
+    gap: 8px;
+    padding: 12px;
+    background: #f7f7f5;
+}
+
+.chatbot-form input {
+    flex: 1;
+    min-width: 0;
+}
+
+.chatbot-form button {
+    border: none;
+    background: var(--navy);
+    color: white;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-weight: 700;
+}
+
+footer {
+    background: var(--navy);
+    color: white;
+    text-align: center;
+    padding: 25px;
+    margin-top: 45px;
+}
+
+footer span {
+    color: var(--gold);
+}
+
+@media (max-width: 800px) {
+    .room-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .hero {
+        min-height: 350px;
+        padding: 40px 6%;
+    }
+}
+
+@media (max-width: 550px) {
+    .stats, .room-grid, .grid {
+        grid-template-columns: 1fr;
+    }
+
+    .panel {
+        padding: 18px;
+    }
+
+    .hero h1 {
+        font-size: 36px;
+    }
+
+    .topbar {
+        padding: 14px 5%;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header class="topbar">
+    <div class="logo">GRAND<span>STAY</span></div>
+    <small>✦ Luxury stays. Memorable experiences.</small>
+</header>
+
+<section class="hero">
+    <div class="hero-content">
+        <div class="eyebrow">Welcome to GrandStay</div>
+        <h1>Your comfort.<br>Your perfect getaway.</h1>
+        <p>Discover elegant rooms, thoughtful hospitality and
+           a relaxing stay designed around you.</p>
+        <button class="hero-button"
+                onclick="document.getElementById('booking-section').scrollIntoView({behavior:'smooth'})">
+            Book Your Stay &nbsp; →
+        </button>
+    </div>
+</section>
+
+<main>
+    <div id="message" class="message" role="status" aria-live="polite"></div>
+
+    <div class="stats">
+        <div class="stat-card">
+            <span>Booking Management</span>
+            <h3>Easy & Secure</h3>
+        </div>
+        <div class="stat-card">
+            <span>Room Categories</span>
+            <h3>03 Options</h3>
+        </div>
+        <div class="stat-card">
+            <span>Reservation Access</span>
+            <h3>Anytime</h3>
+        </div>
+    </div>
+
+    <section class="section-heading">
+        <h2>Discover Our Rooms</h2>
+        <p>Choose a room that suits your style and comfort.</p>
+    </section>
+
+    <div class="room-grid">
+        <article class="room-card">
+            <img
+                src="https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=800&q=80"
+                alt="Elegant standard hotel room"
+                loading="lazy">
+            <div class="room-info">
+                <span class="room-tag">ESSENTIAL COMFORT</span>
+                <h3>Standard Room</h3>
+                <p>A comfortable space for a relaxing stay.</p>
+            </div>
+        </article>
+
+        <article class="room-card">
+            <img
+                src="https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=800&q=80"
+                alt="Spacious deluxe hotel room"
+                loading="lazy">
+            <div class="room-info">
+                <span class="room-tag">GUEST FAVOURITE</span>
+                <h3>Deluxe Room</h3>
+                <p>More space, refined interiors and extra comfort.</p>
+            </div>
+        </article>
+
+        <article class="room-card">
+            <img
+                src="https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=800&q=80"
+                alt="Luxury suite hotel room"
+                loading="lazy">
+            <div class="room-info">
+                <span class="room-tag">PREMIUM EXPERIENCE</span>
+                <h3>Suite</h3>
+                <p>An elevated experience with elegant surroundings.</p>
+            </div>
+        </article>
+    </div>
+
+    <section class="panel" id="booking-section" style="margin-top:30px">
+        <div class="section-heading">
+            <h2>✦ Create a Booking</h2>
+            <p>Enter guest and room details to make a reservation.</p>
+        </div>
+
+        <form id="bookingForm">
+            <div class="grid">
+                <div class="field">
+                    <label for="customer_name">Guest Name</label>
+                    <input id="customer_name" placeholder="Enter full name"
+                           minlength="2" maxlength="100" required>
+                </div>
+
+                <div class="field">
+                    <label for="room_number">Room Number</label>
+                    <input id="room_number" type="number" min="1"
+                           step="1" placeholder="e.g. 123" required>
+                </div>
+
+                <div class="field">
+                    <label for="room_type">Room Category</label>
+                    <select id="room_type" required>
+                        <option value="">Select room category</option>
+                        <option value="Standard">Standard</option>
+                        <option value="Deluxe">Deluxe</option>
+                        <option value="Suite">Suite</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label for="amount">Booking Amount (₹)</label>
+                    <input id="amount" type="number" min="0.01"
+                           step="0.01" placeholder="Enter amount" required>
+                </div>
+            </div>
+
+            <button class="btn btn-gold full" type="submit">
+                Confirm Reservation
+            </button>
+        </form>
+    </section>
+
+    <section class="panel">
+        <div class="section-heading">
+            <h2>Find a Reservation</h2>
+            <p>Retrieve booking details using the booking ID.</p>
+        </div>
+
+        <form id="searchForm">
+            <div class="field">
+                <label for="search_id">Booking ID</label>
+                <input id="search_id" type="number" min="1"
+                       placeholder="Enter booking ID" required>
+            </div>
+            <button class="btn full" type="submit">Search Booking</button>
+        </form>
+
+        <pre id="searchResult" class="result" hidden></pre>
+    </section>
+
+    <section class="panel">
+        <div class="section-heading">
+            <h2>Update Room Details</h2>
+            <p>Change the room number, category, or both.</p>
+        </div>
+
+        <form id="updateForm">
+            <div class="grid">
+                <div class="field">
+                    <label for="update_id">Booking ID</label>
+                    <input id="update_id" type="number" min="1"
+                           placeholder="Enter booking ID" required>
+                </div>
+                <div class="field">
+                    <label for="new_room_number">New Room Number</label>
+                    <input id="new_room_number" type="number" min="1"
+                           step="1" placeholder="Optional">
+                </div>
+                <div class="field">
+                    <label for="new_room_type">New Room Category</label>
+                    <select id="new_room_type">
+                        <option value="">Keep current category</option>
+                        <option value="Standard">Standard</option>
+                        <option value="Deluxe">Deluxe</option>
+                        <option value="Suite">Suite</option>
+                    </select>
+                </div>
+            </div>
+            <button class="btn btn-gold full" type="submit">
+                Save Room Changes
+            </button>
+        </form>
+    </section>
+
+    <section class="panel">
+        <div class="section-heading">
+            <h2>Guest Check-in & Check-out</h2>
+            <p>Manage the status of an existing reservation.</p>
+        </div>
+
+        <div class="field">
+            <label for="action_id">Booking ID</label>
+            <input id="action_id" type="number" min="1"
+                   placeholder="Enter booking ID">
+        </div>
+
+        <div class="actions">
+            <button class="btn btn-green" type="button"
+                    onclick="runAction('checkin')">✓ Check In</button>
+            <button class="btn" type="button"
+                    onclick="runAction('checkout')">Check Out</button>
+            <button class="btn btn-red" type="button"
+                    onclick="runAction('cancel')">Cancel Booking</button>
+        </div>
+    </section>
+
+    <section class="panel">
+        <div class="section-heading">
+            <h2>Reservation Overview</h2>
+            <p>View all bookings stored in your database.</p>
+        </div>
+
+        <button class="btn btn-gold" type="button"
+                onclick="loadBookings()">↻ Refresh Bookings</button>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Booking ID</th>
+                        <th>Guest</th>
+                        <th>Room No.</th>
+                        <th>Category</th>
+                        <th>Amount (₹)</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="bookingTable">
+                    <tr>
+                        <td colspan="6">Select Refresh Bookings to load data.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="panel">
+        <div class="section-heading">
+            <h2>Danger Zone</h2>
+            <p>Delete every reservation. This action may be irreversible.</p>
+        </div>
+        <button class="btn btn-red" type="button"
+                onclick="deleteAllBookings()">Delete All Bookings</button>
+    </section>
+</main>
+
+<div class="chatbot-widget">
+    <div id="chatbotPanel" class="chatbot-panel" role="dialog" aria-live="polite" aria-label="Hotel booking assistant">
+        <div class="chatbot-header">
+            <div>
+                <strong>GrandStay Assistant</strong>
+                <small>Here to help</small>
+            </div>
+            <button id="chatbotClose" class="chatbot-close" type="button" aria-label="Close chatbot">×</button>
+        </div>
+
+        <div id="chatbotMessages" class="chatbot-messages">
+            <div class="chatbot-message bot">
+                <div class="chatbot-bubble">Hi! I can help with room types, bookings, check-in, and hotel support.</div>
+            </div>
+        </div>
+
+        <div class="chatbot-quick">
+            <button type="button" data-prompt="What room types are available?">Room types</button>
+            <button type="button" data-prompt="How do I make a booking?">Book a room</button>
+            <button type="button" data-prompt="How do I check in a guest?">Check in</button>
+        </div>
+
+        <form id="chatbotForm" class="chatbot-form">
+            <input id="chatbotInput" type="text" placeholder="Type your message..." aria-label="Type your message">
+            <button type="submit">Send</button>
+        </form>
+    </div>
+
+    <button id="chatbotToggle" class="chatbot-toggle" type="button" aria-expanded="false" aria-controls="chatbotPanel">
+        💬 Chat with us
+    </button>
+</div>
+
+<footer>
+    <div class="logo">GRAND<span>STAY</span></div>
+    <p>Designed for comfort. Built for memorable stays.</p>
+    <small>© 2026 GrandStay Hotel Management</small>
+</footer>
+
+<script>
+const API = "/bookings";
+
+function showMessage(message, error = false) {
+    const box = document.getElementById("message");
+    box.textContent = message;
+    box.className = "message " + (error ? "error" : "success");
+    box.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+async function request(url, options = {}) {
+    let response;
+
+    try {
+        response = await fetch(url, {
+            ...options,
+            headers: {
+                "Content-Type": "application/json",
+                ...(options.headers || {})
+            }
+        });
+    } catch {
+        throw new Error(
+            "Cannot connect to the backend. Check that FastAPI is running."
+        );
+    }
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+        let detail = data.detail || "Request failed.";
+
+        if (Array.isArray(detail)) {
+            detail = detail.map(item => item.msg).join(", ");
+        } else if (typeof detail !== "string") {
+            detail = JSON.stringify(detail);
+        }
+
+        throw new Error(detail);
+    }
+
+    return data;
+}
+
+function displayResult(data) {
+    const result = document.getElementById("searchResult");
+    result.textContent = JSON.stringify(data, null, 2);
+    result.hidden = false;
+}
+
+document.getElementById("bookingForm").addEventListener(
+    "submit", async function(event) {
+        event.preventDefault();
+
+        const booking = {
+            customer_name:
+                document.getElementById("customer_name").value.trim(),
+            room_number:
+                Number(document.getElementById("room_number").value),
+            room_type:
+                document.getElementById("room_type").value,
+            amount:
+                Number(document.getElementById("amount").value)
+        };
+
+        try {
+            const data = await request(API, {
+                method: "POST",
+                body: JSON.stringify(booking)
+            });
+
+            showMessage(
+                data.message + ". Booking ID: " + data.booking_id
+            );
+
+            this.reset();
+            await loadBookings();
+        } catch (error) {
+            showMessage(error.message, true);
+        }
+    }
+);
+
+document.getElementById("searchForm").addEventListener(
+    "submit", async function(event) {
+        event.preventDefault();
+        const id = document.getElementById("search_id").value;
+
+        try {
+            const data = await request(`${API}/${id}`);
+            displayResult(data);
+            showMessage("Booking details retrieved successfully.");
+        } catch (error) {
+            showMessage(error.message, true);
+        }
+    }
+);
+
+document.getElementById("updateForm").addEventListener(
+    "submit", async function(event) {
+        event.preventDefault();
+
+        const id = document.getElementById("update_id").value;
+        const room = {};
+        const number =
+            document.getElementById("new_room_number").value;
+        const type =
+            document.getElementById("new_room_type").value;
+
+        if (number !== "") room.room_number = Number(number);
+        if (type !== "") room.room_type = type;
+
+        if (Object.keys(room).length === 0) {
+            showMessage("Enter a new room number or category.", true);
+            return;
+        }
+
+        try {
+            const data = await request(`${API}/${id}/room`, {
+                method: "PATCH",
+                body: JSON.stringify(room)
+            });
+
+            showMessage(data.message);
+            await loadBookings();
+        } catch (error) {
+            showMessage(error.message, true);
+        }
+    }
+);
+
+async function runAction(action) {
+    const id = document.getElementById("action_id").value;
+
+    if (!id || !Number.isInteger(Number(id)) || Number(id) < 1) {
+        showMessage("Enter a valid booking ID.", true);
+        return;
+    }
+
+    const labels = {
+        checkin: "check in",
+        checkout: "check out",
+        cancel: "cancel this booking"
+    };
+
+    if (!confirm(`Are you sure you want to ${labels[action]}?`)) return;
+
+    try {
+        const data = await request(`${API}/${id}/${action}`, {
+            method: "PATCH"
+        });
+
+        showMessage(data.message);
+        await loadBookings();
+    } catch (error) {
+        showMessage(error.message, true);
+    }
+}
+
+async function loadBookings() {
+    const table = document.getElementById("bookingTable");
+
+    try {
+        const bookings = await request(API);
+        table.replaceChildren();
+
+        if (!Array.isArray(bookings)) {
+            throw new Error("The bookings API did not return a list.");
+        }
+
+        if (bookings.length === 0) {
+            const row = table.insertRow();
+            const cell = row.insertCell();
+            cell.colSpan = 6;
+            cell.textContent = "No bookings found.";
+            return;
+        }
+
+        bookings.forEach(booking => {
+            const row = table.insertRow();
+
+            [
+                booking.booking_id,
+                booking.customer_name,
+                booking.room_number,
+                booking.room_type,
+                Number(booking.amount).toFixed(2)
+            ].forEach(value => {
+                const cell = row.insertCell();
+                cell.textContent = value ?? "";
+            });
+
+            const statusCell = row.insertCell();
+            const badge = document.createElement("span");
+            const status = String(booking.status || "Unknown");
+            badge.className = "status " +
+                status.toLowerCase().replace(/\s+/g, "-");
+            badge.textContent = status;
+            statusCell.appendChild(badge);
+        });
+    } catch (error) {
+        showMessage(error.message, true);
+    }
+}
+
+async function deleteAllBookings() {
+    if (!confirm("Delete ALL bookings permanently?")) return;
+
+    try {
+        const data = await request(API, { method: "DELETE" });
+        showMessage(
+            data.message + ". Deleted: " + data.deleted_count
+        );
+        await loadBookings();
+    } catch (error) {
+        showMessage(error.message, true);
+    }
+}
+
+const chatbotToggle = document.getElementById("chatbotToggle");
+const chatbotPanel = document.getElementById("chatbotPanel");
+const chatbotClose = document.getElementById("chatbotClose");
+const chatbotForm = document.getElementById("chatbotForm");
+const chatbotInput = document.getElementById("chatbotInput");
+const chatbotMessages = document.getElementById("chatbotMessages");
+
+function toggleChatbot(forceOpen) {
+    const shouldOpen = typeof forceOpen === "boolean" ? forceOpen : !chatbotPanel.classList.contains("open");
+    chatbotPanel.classList.toggle("open", shouldOpen);
+    chatbotToggle.setAttribute("aria-expanded", String(shouldOpen));
+    if (shouldOpen) {
+        chatbotInput.focus();
+    }
+}
+
+function addChatMessage(text, sender = "bot") {
+    const row = document.createElement("div");
+    row.className = "chatbot-message " + sender;
+
+    const bubble = document.createElement("div");
+    bubble.className = "chatbot-bubble";
+    bubble.textContent = text;
+
+    row.appendChild(bubble);
+    chatbotMessages.appendChild(row);
+    chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+}
+
+async function sendChatbotMessage(messageText) {
+    const text = messageText.trim();
+    if (!text) return;
+
+    addChatMessage(text, "user");
+    chatbotInput.value = "";
+
+    try {
+        const data = await request("/chat", {
+            method: "POST",
+            body: JSON.stringify({ message: text })
+        });
+
+        addChatMessage(data.reply || "I’m not sure how to help with that yet.");
+    } catch (error) {
+        addChatMessage(error.message || "The assistant is unavailable right now.");
+    }
+}
+
+chatbotToggle.addEventListener("click", () => toggleChatbot());
+chatbotClose.addEventListener("click", () => toggleChatbot(false));
+
+document.querySelectorAll("[data-prompt]").forEach(button => {
+    button.addEventListener("click", () => {
+        toggleChatbot(true);
+        sendChatbotMessage(button.dataset.prompt);
+    });
+});
+
+chatbotForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    toggleChatbot(true);
+    sendChatbotMessage(chatbotInput.value);
+});
+</script>
+</body>
+</html>

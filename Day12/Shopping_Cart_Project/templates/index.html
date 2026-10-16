@@ -1,0 +1,896 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LuxeCart | Curated Shopping</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root {
+    --ink: #29251f;
+    --espresso: #211d19;
+    --gold: #b3935b;
+    --gold-light: #e4d1a9;
+    --cream: #f8f5ef;
+    --paper: #fffdf9;
+    --muted: #888074;
+    --line: #e9e1d5;
+    --green: #46725a;
+    --red: #a64b44;
+}
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    background: var(--cream);
+    color: var(--ink);
+    font-family: "DM Sans", sans-serif;
+    font-size: 14px;
+}
+
+button, input { font: inherit; }
+button { cursor: pointer; }
+
+.navbar {
+    min-height: 76px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 16px 6%;
+    background: var(--espresso);
+    color: white;
+}
+.brand {
+    font-family: "Playfair Display", serif;
+    font-size: 29px;
+    letter-spacing: 1px;
+}
+.brand span { color: var(--gold-light); }
+.nav-note {
+    color: #d2c5af;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.hero {
+    min-height: 360px;
+    padding: 58px 7%;
+    display: flex;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+    color: white;
+    background:
+        linear-gradient(90deg, rgba(32,27,22,.96) 0%,
+        rgba(32,27,22,.80) 42%, rgba(32,27,22,.10) 100%),
+        url("https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1800&q=85")
+        center 45% / cover;
+}
+.hero-content { max-width: 570px; position: relative; z-index: 1; }
+.eyebrow {
+    color: var(--gold-light);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+}
+.hero h1 {
+    font-family: "Playfair Display", serif;
+    font-size: clamp(39px, 5vw, 65px);
+    font-weight: 400;
+    line-height: 1.08;
+    margin: 18px 0;
+}
+.hero h1 em { color: var(--gold-light); font-weight: 400; }
+.hero p {
+    max-width: 410px;
+    line-height: 1.9;
+    color: #e1d9cf;
+}
+.hero-btn {
+    margin-top: 18px;
+    display: inline-block;
+    padding: 13px 22px;
+    border: 1px solid var(--gold-light);
+    background: var(--gold-light);
+    color: var(--espresso);
+    text-transform: uppercase;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+main { max-width: 1440px; margin: auto; padding: 38px 5%; }
+
+.section-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    gap: 18px;
+    margin-bottom: 23px;
+}
+.section-heading h2 {
+    font: 500 32px "Playfair Display", serif;
+    margin: 7px 0 0;
+}
+.section-heading p { color: var(--muted); margin-bottom: 0; }
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+    margin-bottom: 35px;
+}
+.stat {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    padding: 24px;
+    position: relative;
+}
+.stat:before {
+    content: "";
+    width: 35px;
+    height: 2px;
+    position: absolute;
+    left: 24px;
+    top: 0;
+    background: var(--gold);
+}
+.stat-label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+}
+.stat-value {
+    display: block;
+    margin-top: 14px;
+    font: 500 34px "Playfair Display", serif;
+}
+
+.content-grid {
+    display: grid;
+    grid-template-columns: 340px minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+}
+.panel {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    padding: 27px;
+    min-width: 0;
+}
+.panel-title {
+    font: 500 25px "Playfair Display", serif;
+    margin: 0 0 7px;
+}
+.panel-subtitle {
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--muted);
+    margin: 0 0 25px;
+}
+.field { margin-bottom: 18px; }
+label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    margin-bottom: 8px;
+}
+input {
+    width: 100%;
+    min-width: 0;
+    border: 1px solid var(--line);
+    background: #fffefa;
+    padding: 13px 12px;
+    color: var(--ink);
+    outline: none;
+    border-radius: 0;
+}
+input:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 2px #b3935b1c;
+}
+.btn {
+    border: 1px solid transparent;
+    padding: 11px 14px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    font-weight: 700;
+    transition: .2s ease;
+}
+.btn:hover { filter: brightness(.94); }
+.btn-gold { background: var(--gold); color: white; }
+.btn-dark { background: var(--espresso); color: white; }
+.btn-light { background: #f1eadf; color: var(--ink); }
+.btn-danger { background: #f7e9e6; color: var(--red); }
+.btn-outline { background: transparent; border-color: var(--line); color: var(--ink); }
+.full { width: 100%; padding: 15px; margin-top: 3px; }
+.hint { color: var(--muted); font-size: 11px; line-height: 1.7; }
+
+.table-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 9px;
+    margin: 22px 0;
+}
+.table-toolbar input { flex: 1; min-width: 130px; }
+.table-wrap { overflow-x: auto; }
+table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 12px;
+}
+thead { background: #f5f0e8; }
+th {
+    padding: 14px 12px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    font-weight: 700;
+    color: #70675b;
+    white-space: nowrap;
+}
+td {
+    padding: 15px 12px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: middle;
+}
+.product-cell { display: flex; align-items: center; gap: 12px; min-width: 200px; }
+.product-thumb {
+    width: 47px;
+    height: 54px;
+    object-fit: cover;
+    background: #eee5d8;
+}
+.product-name { font-weight: 700; line-height: 1.5; }
+.customer-name { color: var(--muted); font-size: 11px; margin-top: 3px; }
+.price { white-space: nowrap; font-weight: 700; }
+.status {
+    display: inline-block;
+    padding: 6px 8px;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: .7px;
+    white-space: nowrap;
+    background: #e8efe7;
+    color: var(--green);
+}
+.status.cancelled { background: #f7e9e6; color: var(--red); }
+.actions { min-width: 180px; }
+.actions .btn { margin: 2px; padding: 8px; font-size: 9px; }
+.empty { padding: 40px; text-align: center; color: var(--muted); }
+#message {
+    display: none;
+    padding: 15px 18px;
+    margin-bottom: 22px;
+    background: #e8efe7;
+    color: var(--green);
+    border-left: 3px solid var(--green);
+    line-height: 1.6;
+}
+#message.error {
+    background: #f7e9e6;
+    color: var(--red);
+    border-left-color: var(--red);
+}
+.footer {
+    background: var(--espresso);
+    color: #d6c8b4;
+    padding: 25px 6%;
+    text-align: center;
+    font-size: 11px;
+    letter-spacing: 1px;
+    margin-top: 35px;
+}
+.chat-widget {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: end;
+    gap: 12px;
+}
+.chat-panel {
+    display: none;
+    flex-direction: column;
+    width: min(360px, calc(100vw - 32px));
+    height: min(480px, calc(100vh - 110px));
+    background: var(--paper);
+    border: 1px solid var(--line);
+    box-shadow: 0 12px 40px #211d1926;
+}
+.chat-panel.open { display: flex; }
+.chat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 18px;
+    background: var(--espresso);
+    color: white;
+}
+.chat-header strong {
+    display: block;
+    font: 500 18px "Playfair Display", serif;
+}
+.chat-header span { color: #d2c5af; font-size: 11px; }
+.chat-close {
+    border: 0;
+    background: transparent;
+    color: white;
+    font-size: 22px;
+}
+.chat-messages {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    overflow-y: auto;
+    padding: 16px;
+}
+.chat-bubble {
+    max-width: 88%;
+    padding: 10px 12px;
+    background: #f1eadf;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+.chat-bubble.user {
+    align-self: flex-end;
+    background: var(--espresso);
+    color: white;
+}
+.chat-bubble.error { color: var(--red); }
+.chat-form {
+    display: flex;
+    gap: 8px;
+    padding: 12px;
+    border-top: 1px solid var(--line);
+}
+.chat-form input { flex: 1; }
+.chat-form .btn { flex: 0 0 auto; }
+.chat-toggle {
+    width: 58px;
+    height: 58px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--gold);
+    color: white;
+    font-size: 23px;
+    box-shadow: 0 6px 20px #211d1933;
+}
+.chat-toggle:hover { filter: brightness(.94); }
+
+@media(max-width: 1000px) {
+    .content-grid { grid-template-columns: 1fr; }
+    .hero { background-position: center; }
+}
+@media(max-width: 650px) {
+    .navbar { padding: 17px 5%; }
+    .nav-note { display: none; }
+    .hero { padding: 48px 6%; min-height: 330px; }
+    main { padding: 28px 4%; }
+    .stats { gap: 9px; }
+    .stat { padding: 14px; }
+    .stat:before { left: 14px; }
+    .stat-label { font-size: 9px; letter-spacing: .6px; }
+    .stat-value { font-size: 25px; }
+    .section-heading h2 { font-size: 27px; }
+    .panel { padding: 19px; }
+    .chat-widget { right: 16px; bottom: 16px; }
+}
+</style>
+</head>
+
+<body>
+
+<nav class="navbar">
+    <div class="brand">Luxe<span>Cart</span>.</div>
+    <div class="nav-note">The Art of Curated Shopping</div>
+</nav>
+
+<section class="hero">
+    <div class="hero-content">
+        <div class="eyebrow">An elevated shopping experience</div>
+        <h1>Luxury in every <em>detail.</em></h1>
+        <p>
+            A refined space to manage your orders, curate your
+            purchases, and keep every detail beautifully organized.
+        </p>
+        <button class="hero-btn" onclick="document.getElementById('customer').focus()">
+            Create an order &nbsp; ↗
+        </button>
+    </div>
+</section>
+
+<main>
+    <div id="message" role="status" aria-live="polite"></div>
+
+    <div class="section-heading">
+        <div>
+            <div class="eyebrow" style="color:var(--gold)">Your private dashboard</div>
+            <h2>Order overview</h2>
+        </div>
+        <p>Thoughtfully managed. Beautifully organized.</p>
+    </div>
+
+    <section class="stats">
+        <div class="stat">
+            <div class="stat-label">Total orders</div>
+            <strong class="stat-value" id="totalOrders">—</strong>
+        </div>
+        <div class="stat">
+            <div class="stat-label">Active orders</div>
+            <strong class="stat-value" id="activeOrders">—</strong>
+        </div>
+        <div class="stat">
+            <div class="stat-label">Order value</div>
+            <strong class="stat-value" id="orderValue">₹0.00</strong>
+        </div>
+    </section>
+
+    <section class="content-grid">
+        <div class="panel">
+            <div class="eyebrow" style="color:var(--gold)">Made to order</div>
+            <h2 class="panel-title">Create an order</h2>
+            <p class="panel-subtitle">
+                Enter the customer and purchase details below.
+            </p>
+
+            <form id="orderForm">
+                <div class="field">
+                    <label for="customer">Customer name</label>
+                    <input id="customer" required minlength="2" maxlength="100"
+                           placeholder="Full name">
+                </div>
+                <div class="field">
+                    <label for="product">Product name</label>
+                    <input id="product" required maxlength="150"
+                           placeholder="e.g. Signature handbag">
+                </div>
+                <div class="field">
+                    <label for="quantity">Quantity</label>
+                    <input id="quantity" type="number" required min="1"
+                           max="10000" step="1" placeholder="1">
+                </div>
+                <div class="field">
+                    <label for="amount">Total amount (₹)</label>
+                    <input id="amount" type="number" required min="0"
+                           max="99999999.99" step="0.01" placeholder="0.00">
+                </div>
+                <button class="btn btn-gold full" type="submit">
+                    Place order &nbsp; ↗
+                </button>
+            </form>
+
+            <p class="hint">
+                Order numbers are generated automatically. The total is the
+                full order amount, not the individual product price.
+            </p>
+        </div>
+
+        <div class="panel">
+            <div class="eyebrow" style="color:var(--gold)">Collection management</div>
+            <h2 class="panel-title">Your orders</h2>
+            <p class="panel-subtitle">
+                Search, update, cancel, or remove orders from your collection.
+            </p>
+
+            <div class="table-toolbar">
+                <input id="searchId" type="number" min="1"
+                       placeholder="Enter order ID">
+                <button class="btn btn-dark" id="searchButton">Search</button>
+                <button class="btn btn-light" id="showAll">All orders</button>
+                <button class="btn btn-danger" id="deleteAll">Delete all</button>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Order</th>
+                            <th>Quantity</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                            <th>Manage</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ordersBody">
+                        <tr><td colspan="5" class="empty">Loading your orders...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+</main>
+
+<footer class="footer">
+    LUXECART &nbsp; · &nbsp; THOUGHTFUL SHOPPING, REFINED MANAGEMENT
+</footer>
+
+<aside class="chat-widget" aria-label="LuxeCart chat support">
+    <section class="chat-panel" id="chatPanel" aria-label="Chat with LuxeCart">
+        <header class="chat-header">
+            <div>
+                <strong>LuxeCart Assistant</strong>
+                <span>Order help, whenever you need it</span>
+            </div>
+            <button class="chat-close" id="chatClose" type="button"
+                    aria-label="Close chat">&times;</button>
+        </header>
+        <div class="chat-messages" id="chatMessages" aria-live="polite"
+             aria-relevant="additions">
+            <div class="chat-bubble">
+                Hello! I can help with order questions. Ask about an order by its
+                ID, for example: “What is the status of order #12?”
+            </div>
+        </div>
+        <form class="chat-form" id="chatForm">
+            <input id="chatInput" maxlength="1000" required
+                   aria-label="Your message"
+                   placeholder="Ask about your orders...">
+            <button class="btn btn-gold" id="chatSend" type="submit">Send</button>
+        </form>
+    </section>
+    <button class="chat-toggle" id="chatToggle" type="button"
+            aria-label="Open chat" aria-expanded="false" aria-controls="chatPanel">
+        ✦
+    </button>
+</aside>
+
+<script>
+const body = document.getElementById("ordersBody");
+const message = document.getElementById("message");
+
+function showMessage(text, error = false) {
+    message.textContent = text;
+    message.className = error ? "error" : "";
+    message.style.display = "block";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+async function api(url, options = {}) {
+    const response = await fetch(url, {
+        ...options,
+        headers: {
+            "Content-Type": "application/json",
+            ...(options.headers || {})
+        }
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+        const detail = data.detail || "Request failed.";
+        throw new Error(
+            Array.isArray(detail)
+                ? detail.map(item => item.msg).join(", ")
+                : detail
+        );
+    }
+    return data;
+}
+
+function money(value) {
+    return "₹" + Number(value).toLocaleString("en-IN", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
+
+function createButton(label, style, callback) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "btn " + style;
+    button.textContent = label;
+    button.addEventListener("click", callback);
+    return button;
+}
+
+function renderOrders(orders) {
+    body.replaceChildren();
+
+    if (!orders.length) {
+        const row = body.insertRow();
+        const cell = row.insertCell();
+        cell.colSpan = 5;
+        cell.className = "empty";
+        cell.textContent = "No orders found.";
+        return;
+    }
+
+    for (const order of orders) {
+        const row = body.insertRow();
+
+        const productCell = row.insertCell();
+        const productWrap = document.createElement("div");
+        productWrap.className = "product-cell";
+
+        const image = document.createElement("img");
+        image.className = "product-thumb";
+        image.alt = "";
+        image.loading = "lazy";
+        image.src =
+            "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?auto=format&fit=crop&w=120&q=70";
+        image.onerror = () => { image.style.display = "none"; };
+
+        const details = document.createElement("div");
+        const orderNumber = document.createElement("div");
+        orderNumber.className = "product-name";
+        orderNumber.textContent = "#" + order.order_id;
+
+        const customer = document.createElement("div");
+        customer.className = "customer-name";
+        customer.textContent = order.customer_name;
+
+        const productName = document.createElement("div");
+        productName.className = "customer-name";
+        productName.textContent = order.product_name;
+
+        details.append(orderNumber, customer, productName);
+        productWrap.append(image, details);
+        productCell.appendChild(productWrap);
+
+        const qtyCell = row.insertCell();
+        qtyCell.textContent = order.quantity;
+
+        const totalCell = row.insertCell();
+        totalCell.className = "price";
+        totalCell.textContent = money(order.total_amount);
+
+        const statusCell = row.insertCell();
+        const status = document.createElement("span");
+        status.className = "status" +
+            (order.status === "Cancelled" ? " cancelled" : "");
+        status.textContent = order.status;
+        statusCell.appendChild(status);
+
+        const actions = row.insertCell();
+        actions.className = "actions";
+
+        actions.appendChild(createButton("Edit qty", "btn-light",
+            () => editQuantity(order)));
+        actions.appendChild(createButton("Edit total", "btn-light",
+            () => editTotal(order)));
+
+        if (order.status !== "Cancelled") {
+            actions.appendChild(createButton("Cancel", "btn-danger",
+                () => cancelOrder(order.order_id)));
+        }
+
+        actions.appendChild(createButton("Delete", "btn-danger",
+            () => deleteOrder(order.order_id)));
+    }
+}
+
+function updateStats(orders) {
+    document.getElementById("totalOrders").textContent = orders.length;
+    document.getElementById("activeOrders").textContent =
+        orders.filter(o => o.status !== "Cancelled").length;
+
+    document.getElementById("orderValue").textContent =
+        money(orders.reduce((sum, o) => sum + Number(o.total_amount), 0));
+}
+
+async function loadOrders() {
+    try {
+        const orders = await api("/orders");
+        updateStats(orders);
+        renderOrders(orders);
+    } catch (error) {
+        showMessage(error.message, true);
+        body.replaceChildren();
+        const row = body.insertRow();
+        const cell = row.insertCell();
+        cell.colSpan = 5;
+        cell.className = "empty";
+        cell.textContent = "Unable to load orders. Check the API and database.";
+    }
+}
+
+document.getElementById("orderForm").addEventListener("submit", async event => {
+    event.preventDefault();
+
+    const order = {
+        customer_name: document.getElementById("customer").value.trim(),
+        product_name: document.getElementById("product").value.trim(),
+        quantity: Number(document.getElementById("quantity").value),
+        total_amount: Number(document.getElementById("amount").value)
+    };
+
+    try {
+        const result = await api("/orders", {
+            method: "POST",
+            body: JSON.stringify(order)
+        });
+        showMessage(result.message + " Order ID: " + result.order_id);
+        event.target.reset();
+        await loadOrders();
+    } catch (error) {
+        showMessage(error.message, true);
+    }
+});
+
+document.getElementById("searchButton").addEventListener("click", async () => {
+    const id = document.getElementById("searchId").value;
+
+    if (!id || Number(id) <= 0) {
+        showMessage("Please enter a valid order ID.", true);
+        return;
+    }
+
+    try {
+        const order = await api("/orders/" + encodeURIComponent(id));
+        renderOrders([order]);
+    } catch (error) {
+        showMessage(error.message, true);
+    }
+});
+
+document.getElementById("showAll").addEventListener("click", loadOrders);
+
+async function editQuantity(order) {
+    const value = prompt("Enter the new quantity:", order.quantity);
+    if (value === null) return;
+
+    const quantity = Number(value);
+    if (!Number.isInteger(quantity) || quantity < 1 || quantity > 10000) {
+        showMessage("Quantity must be a whole number from 1 to 10000.", true);
+        return;
+    }
+
+    try {
+        const result = await api(`/orders/${order.order_id}/quantity`, {
+            method: "PUT",
+            body: JSON.stringify({ quantity })
+        });
+        showMessage(result.message);
+        await loadOrders();
+    } catch (error) {
+        showMessage(error.message, true);
+    }
+}
+
+async function editTotal(order) {
+    const value = prompt("Enter the new total amount:", order.total_amount);
+    if (value === null) return;
+
+    const amount = Number(value);
+
+    if (!Number.isFinite(amount) || amount < 0 ||
+        amount > 99999999.99 ||
+        Math.abs(amount * 100 - Math.round(amount * 100)) > 1e-7) {
+        showMessage("Enter a non-negative amount with up to 2 decimals.", true);
+        return;
+    }
+
+    try {
+        const result = await api(`/orders/${order.order_id}/total`, {
+            method: "PUT",
+            body: JSON.stringify({ total_amount: amount })
+        });
+        showMessage(result.message);
+        await loadOrders();
+    } catch (error) {
+        showMessage(error.message, true);
+    }
+}
+
+async function cancelOrder(id) {
+    if (!confirm(`Cancel order #${id}?`)) return;
+
+    try {
+        const result = await api(`/orders/${id}/cancel`, { method: "PATCH" });
+        showMessage(result.message);
+        await loadOrders();
+    } catch (error) {
+        showMessage(error.message, true);
+    }
+}
+
+async function deleteOrder(id) {
+    if (!confirm(`Permanently delete order #${id}?`)) return;
+
+    try {
+        const result = await api(`/orders/${id}`, { method: "DELETE" });
+        showMessage(result.message);
+        await loadOrders();
+    } catch (error) {
+        showMessage(error.message, true);
+    }
+}
+
+document.getElementById("deleteAll").addEventListener("click", async () => {
+    if (!confirm("Delete every order permanently? This cannot be undone.")) return;
+
+    try {
+        const result = await api("/orders", { method: "DELETE" });
+        showMessage(
+            result.message + " Records deleted: " + result.deleted_count
+        );
+        await loadOrders();
+    } catch (error) {
+        showMessage(error.message, true);
+    }
+});
+
+const chatPanel = document.getElementById("chatPanel");
+const chatToggle = document.getElementById("chatToggle");
+const chatMessages = document.getElementById("chatMessages");
+const chatForm = document.getElementById("chatForm");
+const chatInput = document.getElementById("chatInput");
+const chatSend = document.getElementById("chatSend");
+const chatHistory = [];
+
+function addChatMessage(text, role, error = false) {
+    const bubble = document.createElement("div");
+    bubble.className = "chat-bubble" +
+        (role === "user" ? " user" : "") +
+        (error ? " error" : "");
+    bubble.textContent = text;
+    chatMessages.appendChild(bubble);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    return bubble;
+}
+
+function toggleChat(open) {
+    chatPanel.classList.toggle("open", open);
+    chatToggle.setAttribute("aria-expanded", String(open));
+    chatToggle.setAttribute("aria-label", open ? "Close chat" : "Open chat");
+    if (open) chatInput.focus();
+}
+
+chatToggle.addEventListener("click", () => {
+    toggleChat(!chatPanel.classList.contains("open"));
+});
+document.getElementById("chatClose").addEventListener("click", () => {
+    toggleChat(false);
+});
+
+chatForm.addEventListener("submit", async event => {
+    event.preventDefault();
+    const text = chatInput.value.trim();
+    if (!text || chatSend.disabled) return;
+
+    chatHistory.push({ role: "user", content: text });
+    addChatMessage(text, "user");
+    chatForm.reset();
+    chatSend.disabled = true;
+    const waiting = addChatMessage("Thinking...", "assistant");
+
+    try {
+        const result = await api("/chat", {
+            method: "POST",
+            body: JSON.stringify({ messages: chatHistory.slice(-12) })
+        });
+        chatHistory.push({ role: "assistant", content: result.reply });
+        waiting.textContent = result.reply;
+    } catch (error) {
+        waiting.classList.add("error");
+        waiting.textContent = error.message;
+    } finally {
+        chatSend.disabled = false;
+        chatInput.focus();
+    }
+});
+
+loadOrders();
+</script>
+</body>
+</html>

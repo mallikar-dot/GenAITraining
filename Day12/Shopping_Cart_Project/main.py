@@ -1,282 +1,196 @@
 
-import json
 import os
-import re
-from contextlib import asynccontextmanager
-from decimal import Decimal
+import json
 from pathlib import Path
-from typing import Literal
-from urllib.error import HTTPError, URLError
-from urllib.request import Request as UrlRequest, urlopen
+from decimal import Decimal
 
 import mysql.connector
 from mysql.connector import Error
+from dotenv import load_dotenv
 
-from fastapi import FastAPI, HTTPException, Path as ApiPath
-from fastapi import Request
-from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
-from pydantic import BaseModel, Field, field_validator
+from urllib.request import Request, urlopen
+from urllib.error import HTTPError, URLError
+
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
+from pydantic import BaseModel, Field
 
 
-# ================ PROJECT PATHS ================
+# --------------------------------------------------
+# CONFIGURATION
+# --------------------------------------------------
 
 BASE_DIR = Path(__file__).resolve().parent
-templates = Jinja2Templates(
-    directory=str(BASE_DIR / "templates")
+load_dotenv(BASE_DIR / ".env")
+
+OLLAMA_API_KEY = os.getenv("OLLAMA_API_KEY", "").strip()
+
+DB_CONFIG = {
+    "host": "localhost",
+    "user": "root",
+    "password": "root",
+    "database": "shopping_cart_db",
+}
+
+app = FastAPI(
+    title="LuxeCart Shopping Cart API",
+    description="Shopping cart management with an AI assistant",
+    version="1.0.0",
 )
 
 
-# ================ MYSQL CONFIGURATION ================
+# --------------------------------------------------
+# DATABASE CONNECTION
+# --------------------------------------------------
 
-def get_connection():
+def get_db_connection():
     try:
-        return mysql.connector.connect(
-            host="localhost",
-            user="root",
-            password="root",
-            database="shopping_cart_db"
-        )
+        return mysql.connector.connect(**DB_CONFIG)
     except Error as exc:
+        print("Database connection error:", exc)
         raise HTTPException(
-            status_code=503,
-            detail="Database connection failed. Check MySQL and credentials."
+            status_code=500,
+            detail="Could not connect to the shopping cart database.",
         ) from exc
 
 
-# ================ PYDANTIC MODELS ================
+def serialize_order(order):
+    if order is None:
+        return None
+
+    result = dict(order)
+
+    if result.get("total_amount") is not None:
+        result["total_amount"] = float(result["total_amount"])
+
+    return result
+
+
+# --------------------------------------------------
+# CREATE TABLE IF IT DOES NOT EXIST
+# --------------------------------------------------
+
+@app.on_event("startup")
+def initialize_database():
+    connection = None
+    cursor = None
+
+    try:
+        connection = get_db_connection()
+        cursor = connection.cursor()
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS orders (
+                order_id INT AUTO_INCREMENT PRIMARY KEY,
+                customer_name VARCHAR(100) NOT NULL,
+                product_name VARCHAR(150) NOT NULL,
+                quantity INT NOT NULL DEFAULT 1,
+                total_amount DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+                status VARCHAR(30) NOT NULL DEFAULT 'Booked'
+            )
+        """)
+
+        connection.commit()
+        print("Shopping cart database is ready.")
+
+    except Exception as exc:
+        print("Database initialization error:", exc)
+        raise
+
+    finally:
+        if cursor:
+            cursor.close()
+        if connection and connection.is_connected():
+            connection.close()
+
+
+# --------------------------------------------------
+# REQUEST MODELS
+# --------------------------------------------------
 
 class OrderCreate(BaseModel):
-    customer_name: str = Field(min_length=2, max_length=100)
+    customer_name: str = Field(min_length=1, max_length=100)
     product_name: str = Field(min_length=1, max_length=150)
-    quantity: int = Field(gt=0, le=10000)
-    total_amount: Decimal = Field(
-        ge=0, max_digits=10, decimal_places=2
-    )
-
-    @field_validator("customer_name", "product_name")
-    @classmethod
-    def validate_text(cls, value: str) -> str:
-        value = value.strip()
-        if not value:
-            raise ValueError("This field cannot be empty.")
-        return value
+    quantity: int = Field(gt=0)
+    total_amount: Decimal = Field(ge=0)
 
 
 class QuantityUpdate(BaseModel):
-    quantity: int = Field(gt=0, le=10000)
+    quantity: int = Field(gt=0)
 
 
 class TotalUpdate(BaseModel):
-    total_amount: Decimal = Field(
-        ge=0, max_digits=10, decimal_places=2
-    )
+    total_amount: Decimal = Field(ge=0)
 
 
 class ChatMessage(BaseModel):
-    role: Literal["user", "assistant"]
-    content: str = Field(min_length=1, max_length=1000)
-
-    @field_validator("content")
-    @classmethod
-    def validate_content(cls, value: str) -> str:
-        value = value.strip()
-        if not value:
-            raise ValueError("Message cannot be empty.")
-        return value
+    role: str
+    content: str
 
 
 class ChatRequest(BaseModel):
-    messages: list[ChatMessage] = Field(min_length=1, max_length=12)
-
-    @field_validator("messages")
-    @classmethod
-    def validate_last_message(cls, value: list[ChatMessage]) -> list[ChatMessage]:
-        if value[-1].role != "user":
-            raise ValueError("The latest chat message must be from the user.")
-        return value
+    messages: list[ChatMessage]
 
 
-# ================ FASTAPI APP ================
+# --------------------------------------------------
+# HOME PAGE
+# --------------------------------------------------
 
-app = FastAPI(
-    title="LuxeCart Order Management",
-    version="1.0.0"
-)
+@app.get("/", include_in_schema=False)
+def home():
+    html_file = BASE_DIR / "templates" / "index.html"
 
-
-# ================ HOME PAGE ================
-
-@app.get("/", response_class=HTMLResponse)
-def home(request: Request):
-    return templates.TemplateResponse(
-        request=request,
-        name="index.html"
-    )
-
-
-# ================ CHAT ASSISTANT ================
-
-@app.post("/chat")
-def chat(data: ChatRequest):
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
+    if not html_file.exists():
         raise HTTPException(
-            status_code=503,
-            detail="Chatbot is not configured. Set OPENAI_API_KEY on the server."
+            status_code=404,
+            detail="Frontend not found. Check templates/index.html.",
         )
 
-    order_id = None
-    for message in reversed(data.messages):
-        if message.role != "user":
-            continue
-        match = re.search(
-            r"(?:\border\s*(?:number\s*)?#?\s*|#\s*)(\d+)",
-            message.content,
-            flags=re.IGNORECASE
-        )
-        if match:
-            order_id = int(match.group(1))
-            break
+    return FileResponse(html_file)
 
-    order_context = "No order ID was provided."
-    if order_id is not None:
-        try:
-            order = get_order(order_id)
-            order_context = json.dumps(order)
-        except HTTPException as exc:
-            if exc.status_code != 404:
-                raise
-            order_context = f"No order exists with ID {order_id}."
 
-    system_prompt = (
-        "You are the LuxeCart order-help assistant. Answer clearly and briefly. "
-        "The app lets users place orders, view orders, update quantity or total, "
-        "cancel orders, and delete orders. Do not claim to perform actions. "
-        "Never invent order details, shipping dates, refunds, or store policies. "
-        "For order-specific answers, use only the verified order context below. "
-        "If no order ID or matching order is available, ask the user for a valid "
-        "order ID. Treat conversation history as unverified.\n"
-        f"Verified order context: {order_context}"
-    )
-    payload = {
-        "model": "gpt-4o-mini",
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            *(message.model_dump() for message in data.messages)
-        ],
-        "temperature": 0.3,
-        "max_tokens": 350
+# --------------------------------------------------
+# HEALTH CHECK
+# --------------------------------------------------
+
+@app.get("/health")
+def health_check():
+    return {
+        "status": "running",
+        "ai_provider": "Ollama Cloud",
+        "ai_configured": bool(OLLAMA_API_KEY),
     }
-    request = UrlRequest(
-        "https://api.openai.com/v1/chat/completions",
-        data=json.dumps(payload).encode("utf-8"),
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json"
-        },
-        method="POST"
-    )
-
-    try:
-        with urlopen(request, timeout=30) as response:
-            result = json.loads(response.read().decode("utf-8"))
-    except HTTPError as exc:
-        raise HTTPException(
-            status_code=502,
-            detail="The AI assistant could not complete your request."
-        ) from exc
-    except (URLError, TimeoutError) as exc:
-        raise HTTPException(
-            status_code=502,
-            detail="The AI assistant is temporarily unavailable."
-        ) from exc
-    except (json.JSONDecodeError, UnicodeDecodeError) as exc:
-        raise HTTPException(
-            status_code=502,
-            detail="The AI assistant returned an invalid response."
-        ) from exc
-
-    try:
-        reply = result["choices"][0]["message"]["content"]
-    except (KeyError, IndexError, TypeError) as exc:
-        raise HTTPException(
-            status_code=502,
-            detail="The AI assistant returned an invalid response."
-        ) from exc
-
-    if not isinstance(reply, str) or not reply.strip():
-        raise HTTPException(
-            status_code=502,
-            detail="The AI assistant returned an empty response."
-        )
-
-    return {"reply": reply.strip()}
 
 
-# ================ PLACE ORDER ================
-
-@app.post("/orders", status_code=201)
-def place_order(order: OrderCreate):
-    connection = get_connection()
-    cursor = None
-
-    try:
-        cursor = connection.cursor()
-        query = """
-            INSERT INTO orders
-            (customer_name, product_name, quantity, total_amount, status)
-            VALUES (%s, %s, %s, %s, 'Placed')
-        """
-        cursor.execute(
-            query,
-            (
-                order.customer_name,
-                order.product_name,
-                order.quantity,
-                order.total_amount
-            )
-        )
-        connection.commit()
-
-        return {
-            "message": "Your order has been placed successfully.",
-            "order_id": cursor.lastrowid
-        }
-
-    except Error as exc:
-        connection.rollback()
-        raise HTTPException(
-            status_code=500,
-            detail="Unable to place order."
-        ) from exc
-
-    finally:
-        if cursor:
-            cursor.close()
-        connection.close()
-
-
-# ================ DISPLAY ALL ORDERS ================
+# --------------------------------------------------
+# GET ALL ORDERS
+# --------------------------------------------------
 
 @app.get("/orders")
 def get_orders():
-    connection = get_connection()
+    connection = get_db_connection()
     cursor = None
 
     try:
         cursor = connection.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM orders ORDER BY order_id DESC")
-        orders = cursor.fetchall()
 
-        for order in orders:
-            order["total_amount"] = float(order["total_amount"])
+        cursor.execute("""
+            SELECT order_id, customer_name, product_name,
+                   quantity, total_amount, status
+            FROM orders
+            ORDER BY order_id DESC
+        """)
 
-        return orders
+        return [
+            serialize_order(order)
+            for order in cursor.fetchall()
+        ]
 
     except Error as exc:
+        print("Get orders error:", exc)
         raise HTTPException(
-            status_code=500, detail="Unable to retrieve orders."
+            status_code=500,
+            detail="Could not retrieve orders.",
         ) from exc
 
     finally:
@@ -285,33 +199,94 @@ def get_orders():
         connection.close()
 
 
-# ================ GET ORDER BY ID ================
+# --------------------------------------------------
+# CREATE ORDER
+# --------------------------------------------------
+
+@app.post("/orders", status_code=201)
+def create_order(order: OrderCreate):
+    connection = get_db_connection()
+    cursor = None
+
+    try:
+        cursor = connection.cursor(dictionary=True)
+
+        cursor.execute("""
+            INSERT INTO orders
+                (customer_name, product_name, quantity,
+                 total_amount, status)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (
+            order.customer_name.strip(),
+            order.product_name.strip(),
+            order.quantity,
+            order.total_amount,
+            "Booked",
+        ))
+
+        new_order_id = cursor.lastrowid
+        connection.commit()
+
+        cursor.execute("""
+            SELECT order_id, customer_name, product_name,
+                   quantity, total_amount, status
+            FROM orders
+            WHERE order_id = %s
+        """, (new_order_id,))
+
+        return serialize_order(cursor.fetchone())
+
+    except Error as exc:
+        connection.rollback()
+        print("Create order error:", exc)
+        raise HTTPException(
+            status_code=500,
+            detail="Could not create the order.",
+        ) from exc
+
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+# --------------------------------------------------
+# GET ONE ORDER
+# --------------------------------------------------
 
 @app.get("/orders/{order_id}")
-def get_order(order_id: int = ApiPath(gt=0)):
-    connection = get_connection()
+def get_order(order_id: int):
+    connection = get_db_connection()
     cursor = None
 
     try:
         cursor = connection.cursor(dictionary=True)
-        cursor.execute(
-            "SELECT * FROM orders WHERE order_id = %s",
-            (order_id,)
-        )
+
+        cursor.execute("""
+            SELECT order_id, customer_name, product_name,
+                   quantity, total_amount, status
+            FROM orders
+            WHERE order_id = %s
+        """, (order_id,))
+
         order = cursor.fetchone()
 
-        if order is None:
-            raise HTTPException(404, "Order not found.")
+        if not order:
+            raise HTTPException(
+                status_code=404,
+                detail="Order not found.",
+            )
 
-        order["total_amount"] = float(order["total_amount"])
-        return order
+        return serialize_order(order)
 
     except HTTPException:
         raise
 
     except Error as exc:
+        print("Get order error:", exc)
         raise HTTPException(
-            status_code=500, detail="Unable to retrieve order."
+            status_code=500,
+            detail="Could not retrieve the order.",
         ) from exc
 
     finally:
@@ -320,199 +295,376 @@ def get_order(order_id: int = ApiPath(gt=0)):
         connection.close()
 
 
-# ================ UPDATE QUANTITY ================
+# --------------------------------------------------
+# UPDATE ORDER QUANTITY
+# --------------------------------------------------
 
 @app.put("/orders/{order_id}/quantity")
-def update_quantity(
-    data: QuantityUpdate,
-    order_id: int = ApiPath(gt=0)
-):
-    connection = get_connection()
+def update_quantity(order_id: int, data: QuantityUpdate):
+    connection = get_db_connection()
     cursor = None
 
     try:
         cursor = connection.cursor()
-        cursor.execute(
-            "UPDATE orders SET quantity = %s WHERE order_id = %s",
-            (data.quantity, order_id)
-        )
+
+        cursor.execute("""
+            UPDATE orders
+            SET quantity = %s
+            WHERE order_id = %s
+        """, (data.quantity, order_id))
 
         if cursor.rowcount == 0:
             cursor.execute(
                 "SELECT order_id FROM orders WHERE order_id = %s",
-                (order_id,)
+                (order_id,),
             )
-            if cursor.fetchone() is None:
-                raise HTTPException(404, "Order not found.")
+            if not cursor.fetchone():
+                raise HTTPException(
+                    status_code=404,
+                    detail="Order not found.",
+                )
 
-        connection.commit()
-        return {"message": "Quantity updated successfully."}
-
-    except HTTPException:
-        connection.rollback()
-        raise
-
-    except Error as exc:
-        connection.rollback()
-        raise HTTPException(
-            status_code=500, detail="Unable to update quantity."
-        ) from exc
-
-    finally:
-        if cursor:
-            cursor.close()
-        connection.close()
-
-
-# ================ UPDATE TOTAL AMOUNT ================
-
-@app.put("/orders/{order_id}/total")
-def update_total(
-    data: TotalUpdate,
-    order_id: int = ApiPath(gt=0)
-):
-    connection = get_connection()
-    cursor = None
-
-    try:
-        cursor = connection.cursor()
-        cursor.execute(
-            "UPDATE orders SET total_amount = %s WHERE order_id = %s",
-            (data.total_amount, order_id)
-        )
-
-        if cursor.rowcount == 0:
-            cursor.execute(
-                "SELECT order_id FROM orders WHERE order_id = %s",
-                (order_id,)
-            )
-            if cursor.fetchone() is None:
-                raise HTTPException(404, "Order not found.")
-
-        connection.commit()
-        return {"message": "Total amount updated successfully."}
-
-    except HTTPException:
-        connection.rollback()
-        raise
-
-    except Error as exc:
-        connection.rollback()
-        raise HTTPException(
-            status_code=500, detail="Unable to update total amount."
-        ) from exc
-
-    finally:
-        if cursor:
-            cursor.close()
-        connection.close()
-
-
-# ================ CANCEL ORDER ================
-
-@app.patch("/orders/{order_id}/cancel")
-def cancel_order(order_id: int = ApiPath(gt=0)):
-    connection = get_connection()
-    cursor = None
-
-    try:
-        cursor = connection.cursor(dictionary=True)
-        cursor.execute(
-            "SELECT status FROM orders WHERE order_id = %s",
-            (order_id,)
-        )
-        order = cursor.fetchone()
-
-        if order is None:
-            raise HTTPException(404, "Order not found.")
-
-        if order["status"] == "Cancelled":
-            raise HTTPException(400, "Order is already cancelled.")
-
-        cursor.execute(
-            "UPDATE orders SET status = 'Cancelled' WHERE order_id = %s",
-            (order_id,)
-        )
-        connection.commit()
-        return {"message": "Order cancelled successfully."}
-
-    except HTTPException:
-        connection.rollback()
-        raise
-
-    except Error as exc:
-        connection.rollback()
-        raise HTTPException(
-            status_code=500, detail="Unable to cancel order."
-        ) from exc
-
-    finally:
-        if cursor:
-            cursor.close()
-        connection.close()
-
-
-# ================ DELETE ONE ORDER ================
-
-@app.delete("/orders/{order_id}")
-def delete_order(order_id: int = ApiPath(gt=0)):
-    connection = get_connection()
-    cursor = None
-
-    try:
-        cursor = connection.cursor()
-        cursor.execute(
-            "DELETE FROM orders WHERE order_id = %s",
-            (order_id,)
-        )
-
-        if cursor.rowcount == 0:
-            raise HTTPException(404, "Order not found.")
-
-        connection.commit()
-        return {"message": "Order deleted successfully."}
-
-    except HTTPException:
-        connection.rollback()
-        raise
-
-    except Error as exc:
-        connection.rollback()
-        raise HTTPException(
-            status_code=500, detail="Unable to delete order."
-        ) from exc
-
-    finally:
-        if cursor:
-            cursor.close()
-        connection.close()
-
-
-# ================ DELETE ALL ORDERS ================
-
-@app.delete("/orders")
-def delete_all_orders():
-    connection = get_connection()
-    cursor = None
-
-    try:
-        cursor = connection.cursor()
-        cursor.execute("DELETE FROM orders")
-        count = cursor.rowcount
         connection.commit()
 
         return {
-            "message": "Orders deleted successfully.",
-            "deleted_count": count
+            "message": "Order quantity updated successfully.",
+            "order_id": order_id,
+            "quantity": data.quantity,
+        }
+
+    except HTTPException:
+        raise
+
+    except Error as exc:
+        connection.rollback()
+        print("Update quantity error:", exc)
+        raise HTTPException(
+            status_code=500,
+            detail="Could not update order quantity.",
+        ) from exc
+
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+# --------------------------------------------------
+# UPDATE ORDER TOTAL
+# --------------------------------------------------
+
+@app.put("/orders/{order_id}/total")
+def update_total(order_id: int, data: TotalUpdate):
+    connection = get_db_connection()
+    cursor = None
+
+    try:
+        cursor = connection.cursor()
+
+        cursor.execute("""
+            UPDATE orders
+            SET total_amount = %s
+            WHERE order_id = %s
+        """, (data.total_amount, order_id))
+
+        if cursor.rowcount == 0:
+            cursor.execute(
+                "SELECT order_id FROM orders WHERE order_id = %s",
+                (order_id,),
+            )
+            if not cursor.fetchone():
+                raise HTTPException(
+                    status_code=404,
+                    detail="Order not found.",
+                )
+
+        connection.commit()
+
+        return {
+            "message": "Order total updated successfully.",
+            "order_id": order_id,
+            "total_amount": float(data.total_amount),
+        }
+
+    except HTTPException:
+        raise
+
+    except Error as exc:
+        connection.rollback()
+        print("Update total error:", exc)
+        raise HTTPException(
+            status_code=500,
+            detail="Could not update order total.",
+        ) from exc
+
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+# --------------------------------------------------
+# CANCEL ORDER
+# --------------------------------------------------
+
+@app.patch("/orders/{order_id}/cancel")
+def cancel_order(order_id: int):
+    connection = get_db_connection()
+    cursor = None
+
+    try:
+        cursor = connection.cursor()
+
+        cursor.execute("""
+            UPDATE orders
+            SET status = 'Cancelled'
+            WHERE order_id = %s
+        """, (order_id,))
+
+        if cursor.rowcount == 0:
+            cursor.execute(
+                "SELECT order_id FROM orders WHERE order_id = %s",
+                (order_id,),
+            )
+            if not cursor.fetchone():
+                raise HTTPException(
+                    status_code=404,
+                    detail="Order not found.",
+                )
+
+        connection.commit()
+
+        return {
+            "message": "Order cancelled successfully.",
+            "order_id": order_id,
+            "status": "Cancelled",
+        }
+
+    except HTTPException:
+        raise
+
+    except Error as exc:
+        connection.rollback()
+        print("Cancel order error:", exc)
+        raise HTTPException(
+            status_code=500,
+            detail="Could not cancel the order.",
+        ) from exc
+
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+# --------------------------------------------------
+# DELETE ONE ORDER
+# --------------------------------------------------
+
+@app.delete("/orders/{order_id}")
+def delete_order(order_id: int):
+    connection = get_db_connection()
+    cursor = None
+
+    try:
+        cursor = connection.cursor()
+
+        cursor.execute(
+            "DELETE FROM orders WHERE order_id = %s",
+            (order_id,),
+        )
+
+        if cursor.rowcount == 0:
+            raise HTTPException(
+                status_code=404,
+                detail="Order not found.",
+            )
+
+        connection.commit()
+
+        return {
+            "message": "Order deleted successfully.",
+            "order_id": order_id,
+        }
+
+    except HTTPException:
+        raise
+
+    except Error as exc:
+        connection.rollback()
+        print("Delete order error:", exc)
+        raise HTTPException(
+            status_code=500,
+            detail="Could not delete the order.",
+        ) from exc
+
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+
+# --------------------------------------------------
+# DELETE ALL ORDERS
+# --------------------------------------------------
+
+@app.delete("/orders")
+def delete_all_orders():
+    connection = get_db_connection()
+    cursor = None
+
+    try:
+        cursor = connection.cursor()
+
+        cursor.execute("DELETE FROM orders")
+        deleted_count = cursor.rowcount
+
+        connection.commit()
+
+        return {
+            "message": "All orders deleted successfully.",
+            "deleted_count": deleted_count,
         }
 
     except Error as exc:
         connection.rollback()
+        print("Delete all orders error:", exc)
         raise HTTPException(
-            status_code=500, detail="Unable to delete all orders."
+            status_code=500,
+            detail="Could not delete orders.",
         ) from exc
 
     finally:
         if cursor:
             cursor.close()
         connection.close()
+
+
+# --------------------------------------------------
+# OLLAMA CLOUD CHATBOT
+# --------------------------------------------------
+
+@app.post("/chat")
+def chat_with_ai(data: ChatRequest):
+    if not OLLAMA_API_KEY:
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "OLLAMA_API_KEY is missing. Add it to your .env file "
+                "and restart FastAPI."
+            ),
+        )
+
+    messages = [
+        {
+            "role": "system",
+            "content": (
+                "You are the LuxeCart shopping assistant. "
+                "Help users with shopping cart features, products, "
+                "quantities, prices, and general shopping questions. "
+                "Be friendly and concise. "
+                "Never claim an order was changed, cancelled, or deleted "
+                "unless the application actually completed that action. "
+                "Do not invent order details."
+            ),
+        }
+    ]
+
+    for message in data.messages[-20:]:
+        if message.role not in ("user", "assistant"):
+            raise HTTPException(
+                status_code=400,
+                detail="Chat messages must use user or assistant roles.",
+            )
+
+        if message.content.strip():
+            messages.append({
+                "role": message.role,
+                "content": message.content.strip(),
+            })
+
+    if len(messages) == 1 or messages[-1]["role"] != "user":
+        raise HTTPException(
+            status_code=400,
+            detail="Please send a user message.",
+        )
+
+    payload = {
+        "model": "gemma4:31b",
+        "messages": messages,
+        "stream": False,
+    }
+
+    request = Request(
+        url="https://ollama.com/api/chat",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {OLLAMA_API_KEY}",
+        },
+        method="POST",
+    )
+
+    try:
+        with urlopen(request, timeout=180) as response:
+            result = json.loads(
+                response.read().decode("utf-8")
+            )
+
+        reply = result.get("message", {}).get("content")
+
+        if not reply:
+            raise HTTPException(
+                status_code=502,
+                detail="Ollama returned an empty response.",
+            )
+
+        return {"reply": reply}
+
+    except HTTPError as exc:
+        error_body = exc.read().decode(
+            "utf-8",
+            errors="replace",
+        )
+
+        print("Ollama HTTP status:", exc.code)
+        print("Ollama error:", error_body[:1000])
+
+        if exc.code == 401:
+            detail = "Ollama authentication failed. Check your API key."
+        elif exc.code == 403:
+            detail = (
+                "Ollama denied access. Check your account, model access, "
+                "and cloud eligibility."
+            )
+        elif exc.code == 429:
+            detail = (
+                "Ollama usage limit reached. Check your account and plan."
+            )
+        else:
+            detail = f"Ollama API request failed with HTTP {exc.code}."
+
+        raise HTTPException(
+            status_code=502,
+            detail=detail,
+        ) from exc
+
+    except URLError as exc:
+        print("Ollama connection error:", exc)
+        raise HTTPException(
+            status_code=503,
+            detail="Could not connect to Ollama Cloud. Check your internet connection.",
+        ) from exc
+
+    except (KeyError, ValueError) as exc:
+        print("Ollama response parsing error:", exc)
+        raise HTTPException(
+            status_code=502,
+            detail="Received an invalid response from Ollama.",
+        ) from exc
+
+    except TimeoutError as exc:
+        raise HTTPException(
+            status_code=504,
+            detail="The AI assistant timed out. Please try again.",
+        ) from exc
